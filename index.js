@@ -3,18 +3,33 @@ function createElement(nameElement, attribute, innerElement) {
 
     if (attribute !== undefined) {
         Object.entries(attribute).map(el => {
+            
             if (el[0].includes('className')) {
                 elementDOM.setAttribute('class', el[1]);
+
             } else if (el[0].includes('style')) {
-                debugger;
                 Object.entries(el[1]).map(elem => {
-                    elementDOM.style.setProperty(`${elem[0]}`, `${elem[1]}`)
-                    console.log(elementDOM.style.backgroundColor);
+
+                    elementDOM.style.setProperty(`${
+
+                        elem[0].split("").reduce((previousValue, currentValue) => {
+
+                            return ( "A".charCodeAt() <= currentValue.charCodeAt() && 
+                                     "Z".charCodeAt() >= currentValue.charCodeAt() )
+                                        ? previousValue.concat('-', currentValue.toLowerCase())
+                                        : previousValue.concat(currentValue);
+                            }, "")
+                    }`, `${elem[1]}`);
                 });
             } else {
                 elementDOM.setAttribute(`${el[0]}`, `${el[1]}`);
             }
         });
+    }
+
+
+    if (typeof innerElement === 'string') {
+        elementDOM.appendChild(document.createTextNode(innerElement));
     }
 
     return elementDOM;
