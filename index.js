@@ -27,7 +27,6 @@ function createElement(nameElement, attribute, innerElement) {
         });
     }
 
-
     if (typeof innerElement === 'string') {
         elementDOM.appendChild(document.createTextNode(innerElement));
     }
