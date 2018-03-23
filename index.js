@@ -30,7 +30,11 @@ function createElement(nameElement, attribute, innerElement) {
     if (typeof innerElement === 'string') {
         elementDOM.appendChild(document.createTextNode(innerElement));
     }
-
+    /*console.log(typeof innerElement);
+    innerElement.map(el => console.log(el));*/
+    console.log(elementDOM instanceof HTMLElement);
+    console.log(elementDOM instanceof HTMLUnknownElement);
+    //console.log(innerElement instanceof HTMLElement);
     return elementDOM;
 };
 
@@ -41,10 +45,10 @@ const React = {
     render,
 }
   
-const app = React.createElement('h1', {className: 'one', 
+const app = React.createElement('h521', {className: 'one', 
                                         id: 'non', 
                                         style: {'background-color': 'red', borderColor: 'black'}
-                                    });
+                                    }, ["Hello"]);
 
 /*const app = React.createElement('div', { style: { backgroundColor: 'red' } }, [
         React.createElement('span', undefined, 'Hello world'),
