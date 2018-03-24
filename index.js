@@ -50,6 +50,7 @@ function createElement(nameElement, attribute, innerElement) {
                     else throw Error(`Ім'я стилю "${elem[0]}" для тегу "${nameElement.toUpperCase()}" задано не вірно.`);
                 });
             } else {
+                //Опрацювання всіх решти заданих атрибутів
                 if (isStringOrNumber(el[1]))
                     elementDOM.setAttribute(`${convertCamelCaseToNameAttribute(el[0])}`, `${el[1]}`);
                 else throw Error(`Значення атрибуту "${el[0]}" для тегу "${nameElement.toUpperCase()}" повинен бути типом 'string' чи 'number'.`);
@@ -75,10 +76,10 @@ function render(childElement, parentElement) {
     if (Array.isArray(parentElement) || 
         parentElement instanceof HTMLUnknownElement || 
         parentElement.nodeType !== Node.ELEMENT_NODE)
-        throw Error(`Батьківський елемент ${parentElement} не валідний.`);
+        throw Error(`Батьківський елемент ${parentElement.nodeName} не валідний.`);
 
     if (childElement instanceof HTMLUnknownElement)
-        throw Error(`Батьківський елемент ${childElement.nodeName} не валідний.`);
+        throw Error(`Дочірний елемент ${childElement.nodeName} не валідний.`);
     
         parentElement.appendChild(childElement);
 }
