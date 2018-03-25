@@ -61,25 +61,37 @@ function createElement(nameElement, attribute, innerElement) {
     if (innerElement !== undefined) {
         if (Array.isArray(innerElement)) {
             innerElement.map((el) => {
-                if (el instanceof HTMLElement && el.nodeType === 1) elementDOM.appendChild(el);
-                if (typeof el === 'string') elementDOM.appendChild(document.createTextNode(el));
+                if (el instanceof HTMLElement && el.nodeType === 1) {
+                    elementDOM.appendChild(el);
+                } else if (typeof el === 'string') {
+                    elementDOM.appendChild(document.createTextNode(el));
+                } else {
+                    throw Error(`Тип дочірнього елемента "${typeof innerElement}" відміний від типу 'string'`);
+                }
             });
-        }
-
-        if (typeof innerElement === 'string') elementDOM.appendChild(document.createTextNode(innerElement));
+        } else if (typeof innerElement === 'string') {
+            elementDOM.appendChild(document.createTextNode(innerElement));
+        } else {
+            throw Error(`Тип дочірнього елемента "${typeof innerElement}" відміний від типу 'string'`);
+        }        
     }
 
     return elementDOM;
 };
 
 function render(childElement, parentElement) {
-    if (Array.isArray(parentElement) || 
+
+    if (parentElement !== null) {
+        if (Array.isArray(parentElement) || 
         parentElement instanceof HTMLUnknownElement || 
         parentElement.nodeType !== Node.ELEMENT_NODE)
-        throw Error(`Батьківський елемент ${parentElement.nodeName} не валідний.`);
+        throw Error(`Батьківський елемент ${parentElement} не валідний контейнер.`);
+    } else {
+        throw Error(`Елемент не може бути контейнером для вставки елемента ${childElement.nodeName}`);
+    }
 
     if (childElement instanceof HTMLUnknownElement)
-        throw Error(`Дочірний елемент ${childElement.nodeName} не валідний.`);
+        throw Error(`Дочірний елемент ${childElement.nodeName} не валідний HTML тег.`);
     
         parentElement.appendChild(childElement);
 }
