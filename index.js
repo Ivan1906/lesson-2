@@ -1,6 +1,17 @@
+String.format = (strFormat, ...args) => {
+    return strFormat.replace(/{(\d+)}/g, (match, number) => {
+        return typeof args[number] != 'undefined'
+            ? args[number]
+            : match;
+    });
+};
+
 const errorMessages = {
-    containerElementNotSpecified: 'Не задано елемент контейнера',
-    nonValidTag: 'Невалідний HTML тег'
+    containerElementNotSpecified: 'Не задано елемент контейнера.',
+    nonValidTag: 'Невалідний HTML тег для {0}.',
+    badChildElement: 'The child element {0} is incorrectly recorded.',
+    badAttribute: 'Значення атрибуту {0} для тегу {1} повинен бути типом "string" або "number".',
+    badNameAttribute: 'Ім\'я атрибуту {0} для елементу {1} задано невірно.'
 }
 
 const convertCamelCaseToNameAttribute = (nameAttribute) => {
@@ -19,15 +30,17 @@ const isStringOrNumber = (attribute) => {
     return typeof attribute === 'string' || typeof attribute === 'number';
 }
 
-const createElement = (nameElement, attribute, innerElement) => {
+const createElement = (nameElement, attribute = undefined, innerElement = undefined) => {
+
     let elementDOM = document.createElement(`${nameElement}`);
     if (elementDOM instanceof HTMLUnknownElement) 
-        throw Error(`DOM об'єкт створений з імені "${nameElement.toUpperCase()}" є не валідним HTML тегом.`);
+        throw Error(String.format(errorMessages.nonValidTag, nameElement.toUpperCase()));
     
     if (attribute !== undefined) {
         Object
             .entries(attribute)
             .map(el => {
+                console.log(el);
                 // Добавлення класу через "className"
                 if (el[0] === 'className') {
                     if (isStringOrNumber(el[0])) 
@@ -75,28 +88,29 @@ const createElement = (nameElement, attribute, innerElement) => {
                     if (isStringOrNumber(el[1])) 
                         elementDOM.setAttribute(`${convertCamelCaseToNameAttribute(el[0])}`, `${el[1]}`);
                     else 
-                        throw Error(`Значення атрибуту "${el[0]}" для тегу "${nameElement.toUpperCase()}" повинен бути типом 'string' чи 'number'.`);
+                        throw Error(String.format(errorMessages.badAttribute, el[0], nameElement.toUpperCase()));
                     }
                 });
     }
 
     if (innerElement !== undefined) {
-        if (Array.isArray(innerElement)) {
-            innerElement.map((el) => {
-                if (el instanceof HTMLElement && el.nodeType === 1) {
-                    elementDOM.appendChild(el);
-                } else if (typeof el === 'string') {
-                    elementDOM.appendChild(document.createTextNode(el));
-                } else {
-                    throw Error(`Тип дочірнього елемента "${typeof innerElement}" відміний від типу 'string'`);
-                }
-            });
-        } else if (typeof innerElement === 'string') {
-            elementDOM.appendChild(document.createTextNode(innerElement));
-        } else {
-            throw Error(`Тип дочірнього елемента "${typeof innerElement}" відміний від типу 'string'`);
-        }
-    }
+
+        if (!Array.isArray(innerElement)) {
+            let arr = new Array();
+            arr.push(innerElement)
+            innerElement = arr;
+        };
+
+        innerElement.map(el => {
+            if (el instanceof HTMLElement && el.nodeType === 1) {
+                elementDOM.appendChild(el);
+            } else if (typeof el === 'string') {
+                elementDOM.appendChild(document.createTextNode(el));
+            } else {
+                throw Error(String.format(errorMessages.badChildElement, el));
+            }
+        });
+    };
 
     return elementDOM;
 };
@@ -105,14 +119,14 @@ const render = (childElement = undefined, parentElement = undefined) => {
 
     if (parentElement !== undefined) {
         if (Array.isArray(parentElement) || parentElement instanceof HTMLUnknownElement || parentElement.nodeType !== Node.ELEMENT_NODE) 
-            throw Error(`${errorMessages.nonValidTag}, ${parentElement.nodeName}`);
+            throw Error(String.format(errorMessages.nonValidTag, parentElement.nodeName));
         }
     else {
         throw Error(errorMessages.containerElementNotSpecified);
     }
 
     if (childElement instanceof HTMLUnknownElement) 
-        throw Error(`${errorMessages.nonValidTag}, ${childElement.nodeName}`);
+        throw Error(String.format(errorMessages.nonValidTag, childElement.nodeName));
     
     parentElement.appendChild(childElement);
 }
