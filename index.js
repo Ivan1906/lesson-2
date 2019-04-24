@@ -1,18 +1,25 @@
-String.format = (strFormat, ...args) => {
-    return strFormat.replace(/{(\d+)}/g, (match, number) => {
+const errorMessages = {
+    nonParentElement: 'Не задано елемент контейнера.',
+    badParentElement: 'Батьківський елемент {0} являється невалідним.', 
+    nonValidTag: 'Задано невалідний HTML тег {0}.',
+    nonChildElement: 'Незадано елемент для вставки.',
+    badChildElement: 'Дочірний елемент {0} являється невалідним.',
+    badAttributes: 'Параметр "attributes" повинен бути типом "Object".',
+    badAttribute: 'Значення атрибуту {0} для елементу {1} повинен бути типом "string" або "number".',
+    badNameAttribute: 'Ім\'я атрибуту {0} для елементу {1} задано невірно.',
+    isStringAttribute: 'Значення {0} не відповідає типу "String" для атрибуту {1}.',
+    isNumberAttribute: 'Значення {0} не відповідає типу "Number" для атрибуту {1}.',
+    isArrayAttribute: 'Значення {0} не відповідає типу "Array" для атрибуту {1}.',
+    isObjectAttribute: 'Значення {0} не відповідає типу "Object" для атрибуту {1}.'
+};
+
+const formatStr = (format, ...args) => {
+    return format.replace(/{(\d+)}/g, (match, number) => {
         return typeof args[number] != 'undefined'
             ? args[number]
             : match;
     });
 };
-
-const errorMessages = {
-    containerElementNotSpecified: 'Не задано елемент контейнера.',
-    nonValidTag: 'Невалідний HTML тег для {0}.',
-    badChildElement: 'The child element {0} is incorrectly recorded.',
-    badAttribute: 'Значення атрибуту {0} для тегу {1} повинен бути типом "string" або "number".',
-    badNameAttribute: 'Ім\'я атрибуту {0} для елементу {1} задано невірно.'
-}
 
 const convertCamelCaseToNameAttribute = (nameAttribute) => {
     let codeLetterA = "A".charCodeAt();
@@ -26,79 +33,105 @@ const convertCamelCaseToNameAttribute = (nameAttribute) => {
         }, "");
 };
 
-const isStringOrNumber = (attribute) => {
-    return typeof attribute === 'string' || typeof attribute === 'number';
-}
+const isString = (value) => {
+    return typeof value === 'string';
+};
 
-const createElement = (nameElement, attribute = undefined, innerElement = undefined) => {
+const isNumber = (value) => {
+    return typeof value === 'number';
+};
+
+const isArray = (value) => {
+    return Array.isArray(value);
+};
+
+const isObject = (value) => {
+    return typeof value === 'object' && value !== null;
+};
+
+const createElement = (nameElement, attributes = undefined, innerElement = undefined) => {
 
     let elementDOM = document.createElement(`${nameElement}`);
-    if (elementDOM instanceof HTMLUnknownElement) 
-        throw Error(String.format(errorMessages.nonValidTag, nameElement.toUpperCase()));
-    
-    if (attribute !== undefined) {
-        Object
-            .entries(attribute)
-            .map(el => {
-                console.log(el);
-                // Добавлення класу через "className"
-                if (el[0] === 'className') {
-                    if (isStringOrNumber(el[0])) 
-                        elementDOM.className = `${el[1]}`;
-                    else 
-                        throw Error(`Значення атрибуту "${el[0]}" для тегу "${nameElement.toUpperCase()}" повинен бути типом 'string' чи 'number'.`);
-                        // Добавлення класу через "classList"
-                    }
-                else if (el[0] === 'classList') {
-                    if (isStringOrNumber(el[0])) 
-                        elementDOM.classList = el[1];
-                    else 
-                        throw Error(`Значення атрибуту "${el[0]}" для тегу "${nameElement.toUpperCase()}" повинен бути типом 'string' чи 'number'.`);
-                    
-                    if (Array.isArray(el[1])) 
-                        el[1].map(elem => {
-                            if (isStringOrNumber(el[0])) 
-                                elementDOM.classList.add(`${elem}`);
-                            else 
-                                throw Error(`Значення масиву, атрибуту "${el[0]}" для тегу "${nameElement.toUpperCase()}" повині бути типом 'string' чи 'number'.`);
-                            }
-                        );
-                        // Добавлення текстового вмісту елемента через "textContent"
-                    }
-                else if (el[0] === 'textContent') {
-                    typeof el[1] === 'object' && el[1] !== null
-                        ? elementDOM.textContent = JSON.stringify(el[1])
-                        : elementDOM.textContent = el[1];
-                    // Добавлення стилів елементу через "style"
-                } else if (el[0] === 'style') {
-                    Object
-                        .entries(el[1])
-                        .map(elem => {
-                            if (elementDOM.style[`${elem[0]}`] !== undefined) 
-                                if (isStringOrNumber(elem[1])) 
-                                    elementDOM.style.setProperty(`${convertCamelCaseToNameAttribute(elem[0])}`, `${elem[1]}`);
-                                else 
-                                    throw Error(`Значення стилю атрибуту "${elem[0]}" для тегу "${nameElement.toUpperCase()}" повинен бути типом 'string' чи 'number'.`);
-                        else 
-                                throw Error(`Ім'я стилю "${elem[0]}" для тегу "${nameElement.toUpperCase()}" задано не вірно.`);
-                            }
-                        );
-                } else {
-                    //Опрацювання всіх решти заданих атрибутів
-                    if (isStringOrNumber(el[1])) 
-                        elementDOM.setAttribute(`${convertCamelCaseToNameAttribute(el[0])}`, `${el[1]}`);
-                    else 
-                        throw Error(String.format(errorMessages.badAttribute, el[0], nameElement.toUpperCase()));
-                    }
-                });
+    if (elementDOM instanceof HTMLUnknownElement) {
+        throw Error(formatStr(errorMessages.nonValidTag, nameElement.toUpperCase()));
     }
+    
+    if (attributes !== undefined) {
+        
+        if(typeof attributes !== 'object') {
+            throw Error(errorMessages.badAttributes);
+        }
+        
+        Object
+            .entries(attributes)
+            .map(attribute => {
+                
+                let name = attribute[0];
+                let value = attribute[1];
+                
+                switch (name) {
+                    case 'className':
+                        if (!isString(value))
+                            throw Error(formatStr(errorMessages.isStringAttribute, value, name.toUpperCase()));
+                        elementDOM.className = value;   
+                        break;
+
+                    case 'classList':
+                        if (!isArray(value))
+                            throw Error(formatStr(errorMessages.isArrayAttribute, value, name.toUpperCase()));
+
+                        value.map(nameClass => {
+                            if (!isString(nameClass))
+                                throw Error(formatStr(errorMessages.isStringAttribute, nameClass, name.toUpperCase()));
+                            elementDOM.classList.add(nameClass);
+                        });
+                        break;
+
+                    case 'textContent':
+                        if (!isString(value))
+                            throw Error(formatStr(errorMessages.isStringAttribute, value, name.toUpperCase()));
+                        elementDOM.textContent = value;
+                        break;
+
+                    case 'style':
+                        if (!isObject(value))
+                            throw Error(formatStr(errorMessages.isObjectAttribute, value, name.toUpperCase()));
+
+                        Object.keys(value).map(nameAttr => {
+                            if (elementDOM.style[`${nameAttr}`] === undefined)
+                                throw Error(formatStr(errorMessages.badNameAttribute, nameAttr, nameElement.toUpperCase()));
+
+                            if ( !isString(value[nameAttr]) ) {
+                                if ( !isNumber(value[nameAttr]) ) {
+                                    throw Error(formatStr(errorMessages.badAttribute, value[nameAttr], nameElement.toUpperCase()));
+                                };
+                            };
+                                
+                            elementDOM.style.setProperty(convertCamelCaseToNameAttribute(nameAttr), `${value[nameAttr]}`);
+                        });
+                        break;
+                
+                    default:
+                        if (!isString(value)) {
+                            if (!isNumber(value)) {
+                                throw Error(formatStr(errorMessages.badAttribute, value, nameElement.toUpperCase()));
+                            };
+                        };
+                            
+                        elementDOM.setAttribute(convertCamelCaseToNameAttribute(name), `${value}`);
+                        break;
+                };
+        });
+    };
 
     if (innerElement !== undefined) {
 
         if (!Array.isArray(innerElement)) {
-            let arr = new Array();
-            arr.push(innerElement)
-            innerElement = arr;
+            if (innerElement instanceof HTMLElement || typeof innerElement === 'string') {
+                innerElement = new Array(innerElement);
+            } else {
+                throw Error(formatStr(errorMessages.badChildElement, innerElement));
+            };
         };
 
         innerElement.map(el => {
@@ -107,7 +140,7 @@ const createElement = (nameElement, attribute = undefined, innerElement = undefi
             } else if (typeof el === 'string') {
                 elementDOM.appendChild(document.createTextNode(el));
             } else {
-                throw Error(String.format(errorMessages.badChildElement, el));
+                throw Error(formatStr(errorMessages.badChildElement, el));
             }
         });
     };
@@ -117,16 +150,19 @@ const createElement = (nameElement, attribute = undefined, innerElement = undefi
 
 const render = (childElement = undefined, parentElement = undefined) => {
 
-    if (parentElement !== undefined) {
-        if (Array.isArray(parentElement) || parentElement instanceof HTMLUnknownElement || parentElement.nodeType !== Node.ELEMENT_NODE) 
-            throw Error(String.format(errorMessages.nonValidTag, parentElement.nodeName));
-        }
-    else {
-        throw Error(errorMessages.containerElementNotSpecified);
-    }
+    if (childElement === undefined) {
+        throw Error(errorMessages.nonChildElement);
+    } else if (childElement instanceof HTMLUnknownElement) {
+        throw Error(formatStr(errorMessages.nonValidTag, childElement.nodeName));
+    };
 
-    if (childElement instanceof HTMLUnknownElement) 
-        throw Error(String.format(errorMessages.nonValidTag, childElement.nodeName));
+    if (parentElement === undefined) {
+        throw Error(errorMessages.nonParentElement);
+    } else if (Array.isArray(parentElement) || 
+                parentElement instanceof HTMLUnknownElement || 
+                parentElement.nodeType !== Node.ELEMENT_NODE) {
+        throw Error(formatStr(errorMessages.badParentElement, parentElement.nodeName));
+    };
     
     parentElement.appendChild(childElement);
 }
@@ -137,14 +173,18 @@ const React = {
 }
 
 const app = React.createElement('div', {
+    id: 21,
     style: {
-        backgroundColor: 'red'
-    }
+        backgroundColor: 'red',
+        border: '2px solid green'
+    },
+    className: 'one',
+    classList: ['two', 'three']
 }, [
     React.createElement('span', undefined, 'Hello world'),
     React.createElement('br'),
     'This is just a text node',
-    React.createElement('div', {textContent: 'Text content'})
+    React.createElement('div', {textContent: 'Text content', style: {fontSize: '20px', color: 'yellow'}})
 ]);
 
-React.render(app, document.getElementById('root'),);
+React.render(app, document.getElementById('root'));
